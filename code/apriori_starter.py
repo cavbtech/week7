@@ -8,7 +8,7 @@ import time
 
 # Kindly add datasets to this list if you wish to run the program on more dataset
 datasets = ['code/BMS1_spmf.txt']
-min_support = 0.06
+min_support = 0.01
 level = 1
 
 
