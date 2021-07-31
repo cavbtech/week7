@@ -79,7 +79,7 @@ def _find_frequent_1_itemsets(transactions, min_sup):
     return (final_items , trimmed_trans)
 
 
-def _find_frequentitemsets2(transactions, items_to_search, min_sup):
+def _find_frequentitemsets2(transactions, items_to_search, min_sup,curr_level):
     trimmed_trans = []
     
     result_items_map =defaultdict(list)
@@ -93,14 +93,17 @@ def _find_frequentitemsets2(transactions, items_to_search, min_sup):
             if isFound:
                 tran_array_indexs.append(tran_counter)
         cnt_transacitons = len(tran_array_indexs)
-        print(f" searching for {item} in all trans and found in  transactions {cnt_transacitons}") 
+        #print(f" searching for {item} in all trans and found in  transactions {cnt_transacitons}") 
             
-        if(len(tran_array_indexs)>=min_sup):
+        if(cnt_transacitons>=min_sup):
             result_items_map[tuple(item)] = tran_array_indexs
     
     
             
-    final_items = [[item[0]] for item in result_items_map.keys()]
+    if(curr_level>1):
+        final_items = [list(item) for item in result_items_map.keys()]
+    else:
+        final_items = [[item[0]] for item in result_items_map.keys()]
     
     final_tran_array_indexs = set(itertools.chain(*result_items_map.values()))
     
@@ -116,7 +119,7 @@ def generate_frequent_itemsets_2(transactions, freq_items, min_sup):
     min_sup_count	=	min_sup * len(transactions)
     print(f" For Level = {level} total transacitons = {len(transactions)}, input min_sup={min_sup}, min_sup% = {min_sup*100} and min_sup_count = {min_sup_count}")
 	
-    fi_trans    		= _find_frequentitemsets2(transactions,freq_items, min_sup_count)
+    fi_trans    		= _find_frequentitemsets2(transactions,freq_items, min_sup_count,level)
     freq_items    	    = fi_trans[0]
     transactions 		= fi_trans[1]
     transactions 		= list(filter(lambda x: len(x)>=level, transactions))
@@ -126,12 +129,13 @@ def generate_frequent_itemsets_2(transactions, freq_items, min_sup):
         freq_items 	    =  apriori_gen(freq_items)
         ##print(f"freq_items={freq_items[0]}")
         min_sup_count = len(transactions) * min_sup
-        fi_trans = _find_frequentitemsets2(transactions,freq_items, min_sup_count)
+        level = level + 1
+        fi_trans = _find_frequentitemsets2(transactions,freq_items, min_sup_count,level)
         freq_items    	= fi_trans[0]
         transactions    = fi_trans[1]
         transactions    = list(filter(lambda x: len(x)>=level, transactions))
-        level = level + 1
-        print(f"level={level} and FI length={len(freq_items)} and prev_fi first element = {prev_freq_items[0]}")
+        
+        print(f"level={level-1} and FI length={len(freq_items)} and freq_items = {prev_freq_items}")
     return prev_freq_items
 
 
@@ -152,5 +156,5 @@ for dataset in datasets:
     apriori_result = generate_frequent_itemsets_2(transactions,items,min_support)
     print("Time taken:", time.time() - start_time)
 
-    print("At level " , level, " Frequent itemsets formed for", dataset, "at min_support", min_support*100, "%:")
+    print("At level " , level-1, " Frequent itemsets formed for", dataset, "at min_support", min_support*100, "%:")
     print(apriori_result)
