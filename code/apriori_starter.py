@@ -44,6 +44,9 @@ def apriori_gen(L_prev):
 ## This method not only identifies the transactions which  
 ## have mininum support and also keeps only throse transactions 
 ## so that further processing is faster
+## items_to_search =  [[10295], [10311]] - level1
+##items_to_search =  [[10295, 10307, 10311, 10315], [10311, 12487, 12703, 32213]]
+##[10295, 10307, 10311, 10315] - transactions - 10K
 def _find_frequentitemsets(transactions, items_to_search, min_sup,curr_level):
     trimmed_trans = []
     
@@ -93,6 +96,7 @@ def generate_frequent_itemsets(transactions, freq_items, min_sup):
     transactions 		= fi_trans[1]
     transactions 		= list(filter(lambda x: len(x)>=level, transactions))
     prev_freq_items 	= freq_items
+    prev_trans_cnt      = len(transactions)
     while len(freq_items) > 0:
         prev_freq_items =  freq_items
         freq_items 	    =  apriori_gen(freq_items)
@@ -110,14 +114,14 @@ def generate_frequent_itemsets(transactions, freq_items, min_sup):
         print("====================================================================================================")
         print(f""" 
             For next Level  = {level} 
-            total transactions = {len(transactions)}, 
+            total transactions = {prev_trans_cnt}, 
             input min_sup={min_sup}, 
             min_sup% = {min_sup*100} 
             min_sup_count = {min_sup_count} """)
         if(len(transactions)==0):
             print(" as there are no further transactions to process the program exits ")
             print("====================================================================================================")
-
+        prev_trans_cnt      = len(transactions)
     return prev_freq_items
 
 
