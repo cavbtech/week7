@@ -1,14 +1,12 @@
 from collections import defaultdict
 import itertools
-from typing import Tuple
-import numpy as np
-import pandas as pd
 from itertools import combinations as subset
 import time
+import sys
 
-# Kindly add datasets to this list if you wish to run the program on more dataset
-datasets = ['code/BMS1_spmf.txt']
-min_support = 0.01
+# # Kindly add datasets to this list if you wish to run the program on more dataset
+# datasets = ['code/BMS1_spmf.txt']
+# min_support = 0.01
 level = 1
 
 
@@ -41,45 +39,12 @@ def apriori_gen(L_prev):
                     C_ret.append(item)
     return C_ret
 
+
+
 ## This method not only identifies the transactions which  
 ## have mininum support and also keeps only throse transactions 
-## so that further processing will be easy
-def _find_frequent_1_itemsets(transactions, min_sup):
-    trimmed_trans = []
-    items_set = set()
-    result_items_map =defaultdict(list)
-    
-    ## First all items into set.
-    for transaction in transactions:
-        for item in transaction:
-            items_set.add(item)
-    
-    for item in items_set:
-        tran_array_indexs = []
-        tran_counter = -1
-        for transaction in transactions:
-            tran_counter = tran_counter + 1
-            if item in transaction:
-                tran_array_indexs.append(tran_counter)
-
-            
-        if(len(tran_array_indexs)>=min_sup):
-            result_items_map[item] = tran_array_indexs
-    
-    
-            
-    final_items = [[item] for item in result_items_map.keys()]
-    
-    final_tran_array_indexs = set(itertools.chain(*result_items_map.values()))
-    
-    
-    for i in final_tran_array_indexs:
-        trimmed_trans.append(transactions[i])
-    
-    return (final_items , trimmed_trans)
-
-
-def _find_frequentitemsets2(transactions, items_to_search, min_sup,curr_level):
+## so that further processing is faster
+def _find_frequentitemsets(transactions, items_to_search, min_sup,curr_level):
     trimmed_trans = []
     
     result_items_map =defaultdict(list)
@@ -113,13 +78,17 @@ def _find_frequentitemsets2(transactions, items_to_search, min_sup,curr_level):
     
     return (final_items , trimmed_trans)
 
-def generate_frequent_itemsets_2(transactions, freq_items, min_sup):
+def generate_frequent_itemsets(transactions, freq_items, min_sup):
 	## level maintains the level
     global level
-    min_sup_count	=	min_sup * len(transactions)
-    print(f" For Level = {level} total transacitons = {len(transactions)}, input min_sup={min_sup}, min_sup% = {min_sup*100} and min_sup_count = {min_sup_count}")
+    min_sup_count	    =	min_sup * len(transactions)
+    print(f""" For Level  = {level} 
+               total transactions = {len(transactions)}, 
+               input min_sup={min_sup}, 
+               min_sup% = {min_sup*100} 
+               min_sup_count = {min_sup_count} """)
 	
-    fi_trans    		= _find_frequentitemsets2(transactions,freq_items, min_sup_count,level)
+    fi_trans    		= _find_frequentitemsets(transactions,freq_items, min_sup_count,level)
     freq_items    	    = fi_trans[0]
     transactions 		= fi_trans[1]
     transactions 		= list(filter(lambda x: len(x)>=level, transactions))
@@ -130,31 +99,79 @@ def generate_frequent_itemsets_2(transactions, freq_items, min_sup):
         ##print(f"freq_items={freq_items[0]}")
         min_sup_count = len(transactions) * min_sup
         level = level + 1
-        fi_trans = _find_frequentitemsets2(transactions,freq_items, min_sup_count,level)
+
+        fi_trans = _find_frequentitemsets(transactions,freq_items, min_sup_count,level)
         freq_items    	= fi_trans[0]
         transactions    = fi_trans[1]
         transactions    = list(filter(lambda x: len(x)>=level, transactions))
         
-        print(f"level={level-1} and FI length={len(freq_items)} and freq_items = {prev_freq_items}")
+        print(f"level={level-1} and freq_items length={len(prev_freq_items)} and freq_items = {prev_freq_items}")
+        print("====================================================================================================")
+        print("====================================================================================================")
+        print(f""" 
+            For next Level  = {level} 
+            total transactions = {len(transactions)}, 
+            input min_sup={min_sup}, 
+            min_sup% = {min_sup*100} 
+            min_sup_count = {min_sup_count} """)
+        if(len(transactions)==0):
+            print(" as there are no further transactions to process the program exits ")
+            print("====================================================================================================")
+
     return prev_freq_items
 
 
+## Read the input data
 def process(data):
     data = data.split("\n")
     if not data[-1]: data = data[:-1]
     data= [set([int(item.strip()) for item in line.split("-2")[0].strip().split("-1")[:-1]]) for line in data]
-    
     return data
 
-for dataset in datasets:
+## main method to start#
+def go(dataset, min_support):
     with open(dataset) as f:
         data = f.read()
-    transactions = process(data)
-    items = get_level1_items(transactions)
-    #print("Dataset:", transactions)
-    start_time = time.time()
-    apriori_result = generate_frequent_itemsets_2(transactions,items,min_support)
+    transactions    = process(data)
+    f.close
+    items           = get_level1_items(transactions)
+    start_time      = time.time()
+    apriori_result  = generate_frequent_itemsets(transactions,items,min_support)
     print("Time taken:", time.time() - start_time)
 
     print("At level " , level-1, " Frequent itemsets formed for", dataset, "at min_support", min_support*100, "%:")
     print(apriori_result)
+
+
+
+# for dataset in datasets:
+#     with open(dataset) as f:
+#         data = f.read()
+#     transactions    = process(data)
+#     items           = get_level1_items(transactions)
+#     #print("Dataset:", transactions)
+#     start_time      = time.time()
+#     apriori_result  = generate_frequent_itemsets(transactions,items,min_support)
+#     print("Time taken:", time.time() - start_time)
+
+#     print("At level " , level-1, " Frequent itemsets formed for", dataset, "at min_support", min_support*100, "%:")
+#     print(apriori_result)
+
+def main():
+    args        =   sys.argv 
+    file_name   =   ""
+    min_support =   0.05
+    if len(args) == 1:
+        raise  Exception(" Please pass dataset")
+    if len(args) == 2:
+        print (f" First parameter is considered as dataset={args[1]} and minimum support is assumed as 5% i.,e 0.05")
+    if len(args) == 3:
+        print (f""" Dataset={args[1]} and minimum support={args[2]} """)
+        min_support  = float(args[2])
+    
+    file_name   = args[1]
+    print(f""" file_name={file_name}  and min_support = {min_support}""")
+    go(file_name,min_support)
+
+if __name__ == "__main__":
+    main()
